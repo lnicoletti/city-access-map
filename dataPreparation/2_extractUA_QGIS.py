@@ -21,10 +21,12 @@ from qgis.PyQt.QtGui import (
 
 import gdal
 
+# download the raw population raster layer here: https://ghsl.jrc.ec.europa.eu/ghs_pop2022.php
 rlayer = QgsProject.instance().mapLayersByName('GHS_POP_E2020_GLOBE_R2022A_54009_100_V1_0')[0]
 # get the resolution of the raster in layer unit
 #print(rlayer.width(), rlayer.height())
 
+# create this mask using the urban centers database here: http://cidportal.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_STAT_UCDB2015MT_GLOBE_R2019A/V1-2/
 shapefile = 'G:/CodingProjects/leoTemp/data/processed/UA_mask_small.shp'
 
 layer = QgsVectorLayer(shapefile, 'UA_mask_small.shp', 'ogr')
