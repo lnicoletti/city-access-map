@@ -19,10 +19,10 @@ from qgis.PyQt.QtGui import (
     QColor,
 )
 
-import gdal
+from osgeo import gdal
 
 # download the raw population raster layer here: https://ghsl.jrc.ec.europa.eu/ghs_pop2022.php
-rlayer = QgsProject.instance().mapLayersByName('GHS_POP_E2020_GLOBE_R2022A_54009_100_V1_0')[0]
+rlayer = QgsProject.instance().mapLayersByName('GHS_POP_E2020_GLOBE_R2022A_54009_100_V1_0')
 # get the resolution of the raster in layer unit
 #print(rlayer.width(), rlayer.height())
 
