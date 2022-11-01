@@ -25,8 +25,17 @@ directory = os.chdir(r'C:\Users\Leonardo\OneDrive\Documents\TU_Delft\CodingProje
 
 print("loading data")
 # download POIs at https://github.com/MorbZ/OsmPoisPbf/ using uac_filter.txt
-df = pd.read_csv("data/raw/poi/poi.csv")
+# java -jar osmpois.jar --filterFile uac_filter.txt --printHeader planet.osm.pbf
+df = pd.read_csv("data/raw/poi/poi.csv", sep='|')
+df = df[df.category.str.isnumeric()==True]
+df['category'] = df['category'].astype(float)
+df = df.rename(columns={"category": "poi_type_id"})
+
 poi_types = pd.read_excel("data/raw/poi/poi_code_name_mapper.xlsx")
+poi_types = poi_types.replace(" ", np.NaN).dropna()
+
+df = df.merge(poi_types, on="poi_type_id")
+
 # download this data at http://cidportal.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_STAT_UCDB2015MT_GLOBE_R2019A/V1-2/
 uc = pd.read_csv("data/raw/GHS_STAT_UCDB2015MT_GLOBE_R2019A/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.csv", encoding = "ISO-8859-1", engine='python')
 
@@ -35,11 +44,18 @@ uc = uc[['ID_HDC_G0', "CTR_MN_NM", "UC_NM_MN", "P15", "AREA"]].dropna()
 # city + country
 uc["UC_NM_CTR"] = uc["UC_NM_MN"] + ", " +  uc["CTR_MN_NM"]
 
-df.ID_HDC_G0 = df.ID_HDC_G0.astype(int)
 # merge df with uc data
-df = df.merge(uc, on="ID_HDC_G0") 
-poi_types = poi_types.replace(" ", np.NaN).dropna()
-df = df.merge(poi_types, on="poi_type_id")
+gdf = gpd.GeoDataFrame(
+    df, geometry=gpd.points_from_xy(df.lon, df.lat)).set_crs(4326)
+
+geo_uc = gpd.read_file("data/GHS_STAT_UCDB2015MT_GLOBE_R2019A/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg")
+geo_uc = geo_uc[['ID_HDC_G0', "CTR_MN_NM", "UC_NM_MN", "P15", "AREA", "geometry"]].dropna()
+geo_uc["UC_NM_CTR"] = geo_uc["UC_NM_MN"] + ", " +  geo_uc["CTR_MN_NM"]
+
+gdf = gdf.sjoin(geo_uc, how="inner")
+
+df = gdf
+
 # make df of ratio poi/pop to filter data
 df["count"] = 1
 df_poi_per_pop = df.groupby(["ID_HDC_G0", "UC_NM_CTR"]).agg({"P15":"mean", "count":"sum", "AREA":"mean"}).reset_index()
